@@ -51,6 +51,22 @@ The package now ships conditional entries:
   - `voxtral-transcribe-ts/node`
   - `voxtral-transcribe-ts/browser`
 
+## Environment Matrix
+
+| Environment | Package entry | Inference runtime | Default decoder | File input strategy |
+|---|---|---|---|---|
+| Node / local | `voxtral-transcribe-ts` or `voxtral-transcribe-ts/node` | `@huggingface/transformers` + `onnxruntime-node` | `InternalWavDecoder` | `wav` by default, multiformat via `FfmpegDecoder` |
+| Browser | `voxtral-transcribe-ts` in browser-aware bundlers or `voxtral-transcribe-ts/browser` | browser-safe package entry | `BrowserNativeAudioDecoder` | URL, `Blob`, `File`, browser codec support dependent on runtime |
+| Server high-perf | `voxtral-transcribe-ts/node` | `@huggingface/transformers` + `onnxruntime-node` | `FfmpegDecoder` recommended | multiformat through `ffmpeg` |
+
+## Decoder Matrix
+
+| Decoder | Environment | Purpose | Notes |
+|---|---|---|---|
+| `InternalWavDecoder` | Node, browser | Minimal fallback | `wav` only |
+| `FfmpegDecoder` | Node / server | Best multiformat local path | Not available in browser builds |
+| `BrowserNativeAudioDecoder` | Browser | Native client-side decoding | Depends on browser codec support |
+
 You can override this with:
 
 - `target: "auto" | "node" | "browser"`
@@ -144,6 +160,27 @@ Browser inputs can be passed as URLs or `Blob` / `File` objects when using `Brow
 
 You can also create an instance through `createTranscriber(options)`, which uses the same defaults and target rules as `new VoxtralTranscriber(options)`.
 
+## Browser Entry
+
+```ts
+import { createTranscriber } from "voxtral-transcribe-ts/browser";
+
+const transcriber = createTranscriber({
+  target: "browser",
+});
+```
+
+## Node Entry
+
+```ts
+import { createTranscriber, FfmpegDecoder } from "voxtral-transcribe-ts/node";
+
+const transcriber = createTranscriber({
+  target: "node",
+  audioDecoderBackend: new FfmpegDecoder(),
+});
+```
+
 ## WAV Support
 
 The internal WAV decoder supports:
@@ -155,3 +192,11 @@ The internal WAV decoder supports:
 For `mp3`, `m4a`, `ogg`, or `flac`, decode audio yourself and call `transcribeAudio()`.
 
 If you want the package to decode those formats for you on local/server, instantiate the transcriber with `FfmpegDecoder`.
+
+## Validation
+
+```bash
+npm run check
+npm test
+npm run check:browser-bundle
+```

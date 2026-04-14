@@ -34,7 +34,6 @@ The package must keep inference and media decoding separated so each environment
 
 ### Not implemented yet
 
-- [ ] codec support matrix in docs
 - [ ] browser inference runtime qualification in a real browser app
 
 ## Decisions Already Taken
@@ -118,6 +117,7 @@ The package must keep inference and media decoding separated so each environment
   - [x] Split environment-specific entry points if needed
   - [ ] Define the default browser model strategy
   - [ ] Avoid making `Voxtral Mini 4B Realtime` the default browser model
+  - [x] Add a browser bundle validation step
   - [ ] Document expected constraints for WebGPU and WASM fallback
 
 - [ ] **Lot 6 — Environment selection**
@@ -127,16 +127,16 @@ The package must keep inference and media decoding separated so each environment
   - [ ] Add failure modes with actionable errors when a backend is unavailable
 
 - [ ] **Lot 7 — Documentation consolidation**
-  - [ ] Add a clear environment matrix:
-    - [ ] browser
-    - [ ] local Node
-    - [ ] server
-  - [ ] Add a clear decoder matrix:
-    - [ ] `internal-wav`
-    - [ ] `ffmpeg`
-    - [ ] `browser-native`
-  - [ ] Add examples for each environment
-  - [ ] Add install guidance for lightweight vs full-featured usage
+  - [x] Add a clear environment matrix:
+    - [x] browser
+    - [x] local Node
+    - [x] server
+  - [x] Add a clear decoder matrix:
+    - [x] `internal-wav`
+    - [x] `ffmpeg`
+    - [x] `browser-native`
+  - [x] Add examples for each environment
+  - [x] Add install guidance for lightweight vs full-featured usage
 
 - [ ] **Lot 8 — Optional high-performance server path**
   - [ ] Reassess whether strict Voxtral compatibility remains the priority
@@ -153,6 +153,7 @@ The package must keep inference and media decoding separated so each environment
 - [x] We have a multiformat local/server decoder backend
 - [x] We have the browser decoder
 - [x] We have browser-safe packaging and entry points
+- [x] We have documented environment and decoder matrices
 - [ ] We do not yet have a browser-runtime qualification in a real app
 - [x] We have automatic decoder selection by environment
 

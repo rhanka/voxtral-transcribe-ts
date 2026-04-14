@@ -30,8 +30,10 @@
   ],
   "scripts": {
     "build": "tsup src/index.node.ts src/index.browser.ts --format esm --dts --clean",
+    "check:browser-bundle": "esbuild src/index.browser.ts --bundle --platform=browser --format=esm --outfile=/tmp/voxtral-browser-check.js",
     "check": "tsc --noEmit",
-    "test": "npm run build && node --test test/*.test.js"
+    "test": "npm run build && node --test test/*.test.js",
+    "validate": "npm run check && npm run test && npm run check:browser-bundle"
   },
   "keywords": [
     "voxtral",
