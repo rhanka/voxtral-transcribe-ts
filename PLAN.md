@@ -28,6 +28,8 @@ The package must keep inference and media decoding separated so each environment
 - [x] local Node transcriber exists
 - [x] internal WAV decoder exists
 - [x] ONNX-based local runtime exists
+- [x] CI workflow exists
+- [x] npm publish workflow exists
 - [x] build passes
 - [x] tests pass
 - [x] npm pack dry-run passes
@@ -144,6 +146,16 @@ The package must keep inference and media decoding separated so each environment
   - [ ] Compare candidates such as `whisper.cpp` or `sherpa-onnx`
   - [ ] Keep this optional and out of the baseline package path
 
+- [x] **Lot 9 — CI and npm publication**
+  - [x] Add GitHub Actions CI on push and pull request
+  - [x] Add Node version matrix validation
+  - [x] Add tarball smoke test
+  - [x] Add npm publish on `v*` tags
+  - [x] Add post-publish install verification
+  - [x] Keep trusted publishing as the default release path
+  - [x] Keep `NPM_TOKEN` as an optional fallback path
+  - [x] Add a local pre-publish smoke command
+
 ## Where We Are Now
 
 - [x] We have the local Node baseline
@@ -154,6 +166,8 @@ The package must keep inference and media decoding separated so each environment
 - [x] We have the browser decoder
 - [x] We have browser-safe packaging and entry points
 - [x] We have documented environment and decoder matrices
+- [x] We have CI validation
+- [x] We have npm publication workflow
 - [ ] We do not yet have a browser-runtime qualification in a real app
 - [x] We have automatic decoder selection by environment
 

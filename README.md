@@ -196,7 +196,36 @@ If you want the package to decode those formats for you on local/server, instant
 ## Validation
 
 ```bash
-npm run check
-npm test
-npm run check:browser-bundle
+npm run validate
+npm run test:smoke
+```
+
+## CI / Release
+
+The repository now ships a GitHub Actions workflow in `.github/workflows/typescript-ci.yml` modeled after `graphify`.
+
+It does four things:
+
+- runs `npm run validate` on Node `20` and `22`
+- builds a tarball and installs it in a clean directory
+- verifies the published root, `node`, and `browser` exports
+- publishes to npm on tags matching `v*`
+
+Publish strategy:
+
+- default: GitHub Actions trusted publishing with `id-token: write`
+- fallback: if `NPM_TOKEN` is configured as a repository secret, the workflow uses that token instead
+
+Local pre-publish check:
+
+```bash
+npm run test:smoke
+```
+
+Typical release flow:
+
+```bash
+npm version patch
+git push
+git push --tags
 ```
