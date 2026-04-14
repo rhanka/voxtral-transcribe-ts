@@ -1,0 +1,190 @@
+name: TypeScript CI
+
+on:
+  push:
+    branches: ["main"]
+    tags: ["v*"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ["20", "22"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate package
+        run: npm run validate
+
+  smoke-test:
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and pack tarball
+        run: |
+          npm run build
+          TARBALL=$(npm pack 2>/dev/null | tail -1)
+          echo "TARBALL=$TARBALL" >> "$GITHUB_ENV"
+
+      - name: Install from tarball in a clean directory
+        run: |
+          mkdir /tmp/smoke-test && cd /tmp/smoke-test
+          npm init -y --silent
+          npm install "${{ github.workspace }}/${{ env.TARBALL }}"
+
+      - name: Verify packaged files
+        run: |
+          PKG_DIR="/tmp/smoke-test/node_modules/voxtral-transcribe-ts"
+          test -f "$PKG_DIR/dist/index.node.js"
+          test -f "$PKG_DIR/dist/index.browser.js"
+          test -f "$PKG_DIR/dist/index.node.d.ts"
+          test -f "$PKG_DIR/dist/index.browser.d.ts"
+
+      - name: Verify tarball exports
+        run: |
+          cd /tmp/smoke-test
+          node --input-type=module <<'EOF'
+          const expected = [
+            "VoxtralTranscriber",
+            "createTranscriber",
+            "transcribeAudio",
+            "transcribeFile",
+            "createDefaultAudioDecoderBackend",
+            "createDefaultInferenceBackend",
+          ];
+
+          const modules = [
+            ["root", await import("voxtral-transcribe-ts")],
+            ["node", await import("voxtral-transcribe-ts/node")],
+            ["browser", await import("voxtral-transcribe-ts/browser")],
+          ];
+
+          for (const [label, mod] of modules) {
+            for (const key of expected) {
+              if (!(key in mod)) {
+                throw new Error(`${label} export missing: ${key}`);
+              }
+            }
+          }
+
+          if (typeof modules[1][1].FfmpegDecoder !== "function") {
+            throw new Error("node export missing: FfmpegDecoder");
+          }
+
+          if (typeof modules[2][1].BrowserNativeAudioDecoder !== "function") {
+            throw new Error("browser export missing: BrowserNativeAudioDecoder");
+          }
+
+          console.log("Tarball exports verified");
+          EOF
+
+  publish:
+    needs: [test, smoke-test]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate before publish
+        run: npm run validate
+
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -n "${NODE_AUTH_TOKEN:-}" ]; then
+            npm publish --access public
+          else
+            npm publish --access public --provenance
+          fi
+
+  post-publish-check:
+    needs: publish
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Wait for npm propagation
+        run: sleep 30
+
+      - name: Install from npm
+        run: |
+          mkdir /tmp/post-publish && cd /tmp/post-publish
+          npm init -y --silent
+          npm install voxtral-transcribe-ts@latest
+
+      - name: Verify installed package exports
+        run: |
+          cd /tmp/post-publish
+          node --input-type=module <<'EOF'
+          const expected = [
+            "VoxtralTranscriber",
+            "createTranscriber",
+            "transcribeAudio",
+            "transcribeFile",
+            "createDefaultAudioDecoderBackend",
+            "createDefaultInferenceBackend",
+          ];
+
+          const modules = [
+            ["root", await import("voxtral-transcribe-ts")],
+            ["node", await import("voxtral-transcribe-ts/node")],
+            ["browser", await import("voxtral-transcribe-ts/browser")],
+          ];
+
+          for (const [label, mod] of modules) {
+            for (const key of expected) {
+              if (!(key in mod)) {
+                throw new Error(`${label} export missing: ${key}`);
+              }
+            }
+          }
+
+          if (typeof modules[1][1].FfmpegDecoder !== "function") {
+            throw new Error("node export missing: FfmpegDecoder");
+          }
+
+          if (typeof modules[2][1].BrowserNativeAudioDecoder !== "function") {
+            throw new Error("browser export missing: BrowserNativeAudioDecoder");
+          }
+
+          console.log("Installed package exports verified");
+          EOF

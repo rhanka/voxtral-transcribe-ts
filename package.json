@@ -6,6 +6,14 @@
   "main": "./dist/index.node.js",
   "types": "./dist/index.node.d.ts",
   "browser": "./dist/index.browser.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/antoinefa/voxtral-transcribe-ts"
+  },
+  "homepage": "https://github.com/antoinefa/voxtral-transcribe-ts",
+  "bugs": {
+    "url": "https://github.com/antoinefa/voxtral-transcribe-ts/issues"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.node.d.ts",
@@ -28,12 +36,17 @@
     "dist",
     "README.md"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup src/index.node.ts src/index.browser.ts --format esm --dts --clean",
     "check:browser-bundle": "esbuild src/index.browser.ts --bundle --platform=browser --format=esm --outfile=/tmp/voxtral-browser-check.js",
     "check": "tsc --noEmit",
+    "test:smoke": "bash ./scripts/smoke-test.sh",
     "test": "npm run build && node --test test/*.test.js",
-    "validate": "npm run check && npm run test && npm run check:browser-bundle"
+    "validate": "npm run check && npm run test && npm run check:browser-bundle",
+    "prepublishOnly": "npm run validate && npm run test:smoke"
   },
   "keywords": [
     "voxtral",
