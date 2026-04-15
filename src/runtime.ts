@@ -6,7 +6,9 @@ export interface InferenceBackendLoadOptions {
   dtype: DataType;
   localFilesOnly?: boolean;
   model: string;
+  modelPath?: string;
   progressCallback?: (progress: unknown) => void;
+  requireLocalModel?: boolean;
   revision?: string;
 }
 
@@ -34,15 +36,17 @@ export interface InferenceBackend {
 export class TransformersInferenceBackend implements InferenceBackend {
   async load(options: InferenceBackendLoadOptions): Promise<{ model: ModelLike; processor: ProcessorLike }> {
     const { AutoProcessor, PreTrainedModel } = await import("@huggingface/transformers");
+    const modelSource = options.modelPath ?? options.model;
+    const localFilesOnly = options.requireLocalModel || options.localFilesOnly || Boolean(options.modelPath);
     const shared = {
       cache_dir: options.cacheDir,
-      local_files_only: options.localFilesOnly,
+      local_files_only: localFilesOnly,
       progress_callback: options.progressCallback,
       revision: options.revision,
     };
 
-    const processor = (await AutoProcessor.from_pretrained(options.model, shared)) as ProcessorLike;
-    const model = (await PreTrainedModel.from_pretrained(options.model, {
+    const processor = (await AutoProcessor.from_pretrained(modelSource, shared)) as ProcessorLike;
+    const model = (await PreTrainedModel.from_pretrained(modelSource, {
       ...shared,
       device: options.device,
       dtype: options.dtype,

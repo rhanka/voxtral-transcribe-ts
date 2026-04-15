@@ -6,6 +6,7 @@ function createFakeRuntime() {
   const calls = {
     disposed: 0,
     generate: 0,
+    lastLoadOptions: undefined,
     load: 0,
     processedAudioLengths: [],
   };
@@ -40,8 +41,9 @@ function createFakeRuntime() {
   return {
     calls,
     runtime: {
-      async load() {
+      async load(options) {
         calls.load += 1;
+        calls.lastLoadOptions = options;
         return { model, processor };
       },
     },
@@ -120,4 +122,27 @@ test("VoxtralTranscriber uses the configured audio decoder backend for file inpu
   assert.equal(fakeDecoder.calls.lastOptions.sampleRate, 16000);
   assert.equal(fakeDecoder.calls.lastOptions.channels, 1);
   assert.equal(fakeRuntime.calls.processedAudioLengths[0], 4);
+});
+
+test("VoxtralTranscriber can require a pre-provisioned local model without runtime fetch", async () => {
+  const fake = createFakeRuntime();
+  const transcriber = new VoxtralTranscriber(
+    {
+      model: DEFAULT_MODEL,
+      modelPath: "/opt/models/voxtral-mini-4b-realtime",
+      requireLocalModel: true,
+    },
+    fake.runtime,
+  );
+
+  const result = await transcriber.transcribeAudio(new Float32Array([0, 0.5, 0, -0.5]), {
+    sampleRate: 16000,
+  });
+
+  assert.equal(fake.calls.load, 1);
+  assert.equal(fake.calls.lastLoadOptions.model, DEFAULT_MODEL);
+  assert.equal(fake.calls.lastLoadOptions.modelPath, "/opt/models/voxtral-mini-4b-realtime");
+  assert.equal(fake.calls.lastLoadOptions.requireLocalModel, true);
+  assert.equal(fake.calls.lastLoadOptions.localFilesOnly, true);
+  assert.equal(result.model, "/opt/models/voxtral-mini-4b-realtime");
 });

@@ -94,10 +94,12 @@ console.log(result.text);
 Options:
 
 - `model`: defaults to `onnx-community/Voxtral-Mini-4B-Realtime-2602-ONNX`
+- `modelPath`: optional local path or pre-provisioned snapshot path used instead of fetching by model id
 - `device`: defaults to `cpu`
 - `dtype`: defaults to `q4`
 - `cacheDir`
 - `localFilesOnly`
+- `requireLocalModel`: when `true`, fail instead of attempting a runtime download
 - `revision`
 - `progressCallback`
 - `target`: defaults to `auto`
@@ -159,6 +161,34 @@ console.log(result.text);
 Browser inputs can be passed as URLs or `Blob` / `File` objects when using `BrowserNativeAudioDecoder` or the default browser auto-selection.
 
 You can also create an instance through `createTranscriber(options)`, which uses the same defaults and target rules as `new VoxtralTranscriber(options)`.
+
+## Enterprise / Artifactory
+
+There are two separate concerns in enterprise environments:
+
+- npm dependency installation
+- model provisioning
+
+`npm install voxtral-transcribe-ts` only installs the package and its npm dependencies. It does not download the Voxtral model checkpoint during package installation.
+
+By default, the model may still be fetched later at runtime when the transcriber first loads. In registry-controlled environments such as `Artifactory`, the recommended setup is:
+
+- proxy npm dependencies through your internal registry
+- pre-provision the Voxtral model snapshot on disk or in an internal artifact store
+- point the transcriber at that local snapshot
+- require local-only model loading so runtime fails fast instead of reaching out to Hugging Face
+
+```ts
+import { FfmpegDecoder, VoxtralTranscriber } from "voxtral-transcribe-ts/node";
+
+const transcriber = new VoxtralTranscriber({
+  audioDecoderBackend: new FfmpegDecoder(),
+  modelPath: "/opt/models/Voxtral-Mini-4B-Realtime-2602-ONNX",
+  requireLocalModel: true,
+});
+```
+
+With `modelPath` set, the package treats the model as a local artifact and enables local-only loading for the runtime backend. That is the mode to use for `Artifactory + local model` deployments.
 
 ## Browser Entry
 
@@ -223,6 +253,8 @@ npm run test:smoke
 ```
 
 That smoke test now proves a fresh-machine install path: it packs the library, creates an empty temp project, runs `npm install <tarball>`, then verifies the installed dependencies and exports from that temp install.
+
+The runtime tests also cover the enterprise local-model path: `modelPath + requireLocalModel` is forwarded as a local-only load contract so runtime can be configured with zero remote model fetch.
 
 Typical release flow:
 

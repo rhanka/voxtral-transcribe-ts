@@ -28,7 +28,9 @@ export interface VoxtralTranscriberOptions {
   inferenceBackend?: InferenceBackend;
   localFilesOnly?: boolean;
   model?: string;
+  modelPath?: string;
   progressCallback?: (progress: unknown) => void;
+  requireLocalModel?: boolean;
   revision?: string;
   target?: VoxtralTarget;
 }
@@ -50,6 +52,18 @@ export interface VoxtralTranscriptionResult {
 interface LoadedRuntime {
   model: ModelLike;
   processor: ProcessorLike;
+}
+
+interface NormalizedTranscriberOptions {
+  cacheDir?: string;
+  device: VoxtralDevice;
+  dtype: VoxtralDtype;
+  localFilesOnly: boolean;
+  model: string;
+  modelPath?: string;
+  progressCallback?: (progress: unknown) => void;
+  requireLocalModel: boolean;
+  revision?: string;
 }
 
 export { decodeWav, readWavFile, resampleAudio, type DecodedWav } from "./audio.browser.js";
@@ -83,13 +97,7 @@ export function createDefaultInferenceBackend(): InferenceBackend {
 export class VoxtralTranscriber {
   private readonly audioDecoderBackend: AudioDecoderBackend;
   private readonly inferenceBackend: InferenceBackend;
-  private readonly options: Required<
-    Omit<
-      VoxtralTranscriberOptions,
-      "audioDecoderBackend" | "cacheDir" | "inferenceBackend" | "localFilesOnly" | "progressCallback" | "revision" | "target"
-    >
-  > &
-    Pick<VoxtralTranscriberOptions, "cacheDir" | "localFilesOnly" | "progressCallback" | "revision">;
+  private readonly options: NormalizedTranscriberOptions;
   private runtimePromise?: Promise<LoadedRuntime>;
 
   constructor(
@@ -97,13 +105,18 @@ export class VoxtralTranscriber {
     inferenceBackend: InferenceBackend = options.inferenceBackend ?? createDefaultInferenceBackend(),
     audioDecoderBackend: AudioDecoderBackend = options.audioDecoderBackend ?? createDefaultAudioDecoderBackend(options.target ?? DEFAULT_TARGET),
   ) {
+    const modelPath = options.modelPath;
+    const requireLocalModel = options.requireLocalModel ?? Boolean(modelPath);
+
     this.options = {
       cacheDir: options.cacheDir,
       device: options.device ?? DEFAULT_DEVICE,
       dtype: options.dtype ?? DEFAULT_DTYPE,
-      localFilesOnly: options.localFilesOnly,
+      localFilesOnly: options.localFilesOnly ?? requireLocalModel,
       model: options.model ?? DEFAULT_MODEL,
+      modelPath,
       progressCallback: options.progressCallback,
+      requireLocalModel,
       revision: options.revision,
     };
     this.inferenceBackend = inferenceBackend;
@@ -134,7 +147,7 @@ export class VoxtralTranscriber {
     return {
       decoder: this.audioDecoderBackend.name,
       durationMs: performance.now() - startedAt,
-      model: this.options.model,
+      model: this.options.modelPath ?? this.options.model,
       sampleRate: targetSampleRate,
       text,
     };
@@ -173,7 +186,9 @@ export class VoxtralTranscriber {
         dtype: this.options.dtype,
         localFilesOnly: this.options.localFilesOnly,
         model: this.options.model,
+        modelPath: this.options.modelPath,
         progressCallback: this.options.progressCallback,
+        requireLocalModel: this.options.requireLocalModel,
         revision: this.options.revision,
       });
     }

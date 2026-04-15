@@ -28,6 +28,7 @@ The package must keep inference and media decoding separated so each environment
 - [x] local Node transcriber exists
 - [x] internal WAV decoder exists
 - [x] ONNX-based local runtime exists
+- [x] local-only model loading contract exists
 - [x] CI workflow exists
 - [x] npm publish workflow exists
 - [x] build passes
@@ -156,6 +157,12 @@ The package must keep inference and media decoding separated so each environment
   - [x] Keep `NPM_TOKEN` as an optional fallback path
   - [x] Add a local pre-publish smoke command
 
+- [x] **Lot 10 — Enterprise local-model support**
+  - [x] Add explicit `modelPath` support
+  - [x] Add `requireLocalModel` fail-fast mode
+  - [x] Document `Artifactory + local model` deployment
+  - [x] Add a runtime test that forbids remote model fetch by contract
+
 ## Where We Are Now
 
 - [x] We have the local Node baseline
@@ -166,6 +173,7 @@ The package must keep inference and media decoding separated so each environment
 - [x] We have the browser decoder
 - [x] We have browser-safe packaging and entry points
 - [x] We have documented environment and decoder matrices
+- [x] We have a documented enterprise local-model mode
 - [x] We have CI validation
 - [x] We have npm publication workflow
 - [ ] We do not yet have a browser-runtime qualification in a real app
