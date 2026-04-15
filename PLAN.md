@@ -149,7 +149,7 @@ The package must keep inference and media decoding separated so each environment
 - [x] **Lot 9 — CI and npm publication**
   - [x] Add GitHub Actions CI on push and pull request
   - [x] Add Node version matrix validation
-  - [x] Add tarball smoke test
+  - [x] Add pristine tarball install smoke test
   - [x] Add npm publish on `v*` tags
   - [x] Add post-publish install verification
   - [x] Keep trusted publishing as the default release path

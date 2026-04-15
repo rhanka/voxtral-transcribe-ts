@@ -207,7 +207,7 @@ The repository now ships a GitHub Actions workflow in `.github/workflows/typescr
 It does four things:
 
 - runs `npm run validate` on Node `20` and `22`
-- builds a tarball and installs it in a clean directory
+- builds a tarball and installs it into a pristine temp project with `npm install`
 - verifies the published root, `node`, and `browser` exports
 - publishes to npm on tags matching `v*`
 
@@ -221,6 +221,8 @@ Local pre-publish check:
 ```bash
 npm run test:smoke
 ```
+
+That smoke test now proves a fresh-machine install path: it packs the library, creates an empty temp project, runs `npm install <tarball>`, then verifies the installed dependencies and exports from that temp install.
 
 Typical release flow:
 

@@ -7,6 +7,7 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 TMP_DIR="$(mktemp -d)"
 NPM_CACHE_DIR="$TMP_DIR/npm-cache"
 TARBALL=""
+INSTALL_DIR="$TMP_DIR/install"
 
 cleanup() {
   rm -rf "$TMP_DIR"
@@ -31,17 +32,14 @@ echo "Step 2: Pack..."
 TARBALL="$(npm pack 2>/dev/null | tail -1)"
 echo "  ✓ Packed: $TARBALL"
 
-echo "Step 3: Extract tarball in a clean directory..."
-mkdir -p "$TMP_DIR/node_modules"
-tar -xzf "$PROJECT_DIR/$TARBALL" -C "$TMP_DIR"
-mv "$TMP_DIR/package" "$TMP_DIR/node_modules/voxtral-transcribe-ts"
-mkdir -p "$TMP_DIR/node_modules/@huggingface"
-ln -s "$PROJECT_DIR/node_modules/@huggingface/transformers" "$TMP_DIR/node_modules/@huggingface/transformers"
-ln -s "$PROJECT_DIR/node_modules/onnxruntime-common" "$TMP_DIR/node_modules/onnxruntime-common"
-ln -s "$PROJECT_DIR/node_modules/onnxruntime-node" "$TMP_DIR/node_modules/onnxruntime-node"
-echo "  ✓ Extracted tarball"
+echo "Step 3: Install tarball in a pristine temp project..."
+mkdir -p "$INSTALL_DIR"
+cd "$INSTALL_DIR"
+npm init -y --silent >/dev/null
+npm install "$PROJECT_DIR/$TARBALL"
+echo "  ✓ Installed tarball and resolved dependencies"
 
-PKG_DIR="$TMP_DIR/node_modules/voxtral-transcribe-ts"
+PKG_DIR="$INSTALL_DIR/node_modules/voxtral-transcribe-ts"
 
 echo "Step 4: Verify packaged files..."
 [ -f "$PKG_DIR/dist/index.node.js" ] || { echo "  ✗ dist/index.node.js missing"; exit 1; }
@@ -50,8 +48,14 @@ echo "Step 4: Verify packaged files..."
 [ -f "$PKG_DIR/dist/index.browser.d.ts" ] || { echo "  ✗ dist/index.browser.d.ts missing"; exit 1; }
 echo "  ✓ Dist files are bundled"
 
-echo "Step 5: Verify published exports..."
-cd "$TMP_DIR"
+echo "Step 5: Verify runtime dependencies were installed in the temp project..."
+[ -d "$INSTALL_DIR/node_modules/onnxruntime-node" ] || { echo "  ✗ onnxruntime-node missing from clean install"; exit 1; }
+[ ! -L "$INSTALL_DIR/node_modules/onnxruntime-node" ] || { echo "  ✗ onnxruntime-node should be installed, not symlinked"; exit 1; }
+[ -d "$INSTALL_DIR/node_modules/@huggingface/transformers" ] || { echo "  ✗ @huggingface/transformers missing from clean install"; exit 1; }
+echo "  ✓ Runtime dependencies were installed from npm"
+
+echo "Step 6: Verify published exports..."
+cd "$INSTALL_DIR"
 node --input-type=module <<'EOF'
 const expected = [
   "VoxtralTranscriber",
