@@ -1,6 +1,6 @@
 {
   "name": "voxtral-transcribe-ts",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Minimal TypeScript wrapper for local Voxtral Mini 4B Realtime transcription in Node.js.",
   "type": "module",
   "main": "./dist/index.node.js",
