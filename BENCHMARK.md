@@ -26,6 +26,43 @@ Fields:
 
 See `bench/manifest.example.jsonl` for the expected shape.
 
+For Common Voice or an internal CSV/TSV corpus, generate a manifest with:
+
+```bash
+npm run bench:manifest -- \
+  --transcripts bench/datasets/raw/common-voice-fr/test.tsv \
+  --audio-dir bench/datasets/raw/common-voice-fr/clips \
+  --out bench/datasets/common-voice-fr-test.jsonl \
+  --id-column path \
+  --audio-column path \
+  --text-column sentence \
+  --language fr
+```
+
+More dataset notes: `bench/datasets/README.md`.
+
+## Full Suite
+
+After creating a manifest and installing the optional Python benchmark dependencies, run:
+
+```bash
+MANIFEST=bench/datasets/common-voice-fr-test.jsonl npm run bench:suite
+```
+
+Useful profile knobs:
+
+```bash
+MANIFEST=bench/datasets/common-voice-fr-test.jsonl \
+VOXTRAL_DECODER=ffmpeg \
+VOXTRAL_MODE=warm \
+VOXTRAL_DEVICE=cpu \
+VOXTRAL_DTYPE=q4 \
+FASTER_WHISPER_MODEL=small \
+FASTER_WHISPER_DEVICE=cpu \
+FASTER_WHISPER_COMPUTE_TYPE=int8 \
+npm run bench:suite
+```
+
 ## Voxtral Runner
 
 Build the package first because the runner imports the local `dist` entry:

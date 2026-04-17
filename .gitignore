@@ -6,6 +6,10 @@ dist/
 .playwright-mcp/
 __pycache__/
 *.pyc
+bench/datasets/audio/
+bench/datasets/raw/
+bench/datasets/*.jsonl
+!bench/datasets/manifest.example.jsonl
 bench/results/*.json
 bench/results/*.jsonl
 !bench/results/.gitkeep

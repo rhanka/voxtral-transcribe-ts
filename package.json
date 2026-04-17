@@ -35,6 +35,8 @@
     "build": "tsup src/index.node.ts src/index.browser.ts --format esm --dts --clean",
     "check:browser-bundle": "esbuild src/index.browser.ts --bundle --platform=browser --format=esm --outfile=/tmp/voxtral-browser-check.js",
     "check": "tsc --noEmit",
+    "bench:manifest": "node bench/create-manifest.mjs",
+    "bench:suite": "bash bench/run-suite.sh",
     "bench:voxtral": "node bench/run-voxtral.mjs",
     "bench:faster-whisper": "python3 bench/run-faster-whisper.py",
     "bench:score": "node bench/score.mjs",
