@@ -4,3 +4,6 @@ dist/
 .DS_Store
 .codex
 .playwright-mcp/
+bench/results/*.json
+bench/results/*.jsonl
+!bench/results/.gitkeep

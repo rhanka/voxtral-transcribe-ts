@@ -230,6 +230,12 @@ npm run validate
 npm run test:smoke
 ```
 
+## Benchmark
+
+The repository includes a benchmark harness for comparing `voxtral-transcribe-ts` against `faster-whisper` on WER, CER, and real-time factor.
+
+See [BENCHMARK.md](/home/antoinefa/src/voxtral-ts/BENCHMARK.md).
+
 ## CI / Release
 
 The repository now ships a GitHub Actions workflow in `.github/workflows/typescript-ci.yml` modeled after `graphify`.

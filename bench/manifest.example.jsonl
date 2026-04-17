@@ -1,0 +1,2 @@
+{"id":"sample_fr_001","audio":"./audio/sample_fr_001.wav","text":"bonjour je veux tester la transcription locale","language":"fr","durationMs":4000}
+{"id":"sample_en_001","audio":"./audio/sample_en_001.wav","text":"this is a local speech recognition benchmark","language":"en","durationMs":4000}
