@@ -4,6 +4,8 @@ dist/
 .DS_Store
 .codex
 .playwright-mcp/
+__pycache__/
+*.pyc
 bench/results/*.json
 bench/results/*.jsonl
 !bench/results/.gitkeep
