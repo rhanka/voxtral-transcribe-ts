@@ -49,6 +49,14 @@ function parseArgs(argv) {
     throw new Error("--decoder must be internal-wav or ffmpeg");
   }
 
+  if (args.maxNewTokens !== undefined) {
+    const maxNewTokens = Number.parseInt(args.maxNewTokens, 10);
+    if (!Number.isSafeInteger(maxNewTokens) || maxNewTokens <= 0) {
+      throw new Error("--max-new-tokens must be a positive integer");
+    }
+    args.maxNewTokens = maxNewTokens;
+  }
+
   return args;
 }
 
@@ -166,7 +174,9 @@ async function transcribeOne(transcriber, args, item, out, modelLoadMs) {
   let record;
 
   try {
-    const result = await transcriber.transcribeFile(item.audioPath);
+    const result = await transcriber.transcribeFile(item.audioPath, {
+      maxNewTokens: args.maxNewTokens,
+    });
     const durationMs = performance.now() - startedAt;
     const audioDurationMs = item.durationMs ?? inferWavDurationMs(item.audioPath);
 

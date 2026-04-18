@@ -60,7 +60,7 @@
     "node": ">=20.11.0"
   },
   "dependencies": {
-    "@huggingface/transformers": "^3.8.1",
+    "@huggingface/transformers": "^4.1.0",
     "onnxruntime-common": "1.21.0",
     "onnxruntime-node": "1.21.0"
   },

@@ -66,6 +66,79 @@ interface NormalizedTranscriberOptions {
   revision?: string;
 }
 
+function isVoxtralRealtimeProcessor(processor: ProcessorLike): processor is ProcessorLike & {
+  num_samples_first_audio_chunk: number;
+  num_samples_per_audio_chunk: number;
+} {
+  return Number.isFinite(processor.num_samples_first_audio_chunk)
+    && Number.isFinite(processor.num_samples_per_audio_chunk)
+    && Number(processor.num_samples_first_audio_chunk) > 0
+    && Number(processor.num_samples_per_audio_chunk) > 0;
+}
+
+function resolveMaxNewTokens(
+  processor: ProcessorLike,
+  audio: Float32Array,
+  options: VoxtralTranscribeOptions,
+): number | undefined {
+  if (options.maxNewTokens !== undefined) {
+    return options.maxNewTokens;
+  }
+
+  if (!isVoxtralRealtimeProcessor(processor)) {
+    return undefined;
+  }
+
+  const samplesPerTextStep = Number(processor.raw_audio_length_per_tok)
+    || Math.max(1, Math.floor(processor.num_samples_per_audio_chunk / 8));
+  return Math.ceil(audio.length / samplesPerTextStep) + 64;
+}
+
+async function createGenerationInputs(processor: ProcessorLike, audio: Float32Array): Promise<Record<string, unknown>> {
+  if (!isVoxtralRealtimeProcessor(processor)) {
+    return await processor(audio);
+  }
+
+  const inputFeatures: unknown[] = [];
+  let inputIds: unknown;
+  let offset = 0;
+  let isFirstChunk = true;
+
+  // Voxtral Realtime ONNX consumes fixed-size streaming feature chunks.
+  // Padding the last chunk keeps the audio encoder projector shape valid.
+  while (offset < audio.length || isFirstChunk) {
+    const chunkSamples = isFirstChunk
+      ? processor.num_samples_first_audio_chunk
+      : processor.num_samples_per_audio_chunk;
+    const chunk = new Float32Array(chunkSamples);
+    chunk.set(audio.subarray(offset, Math.min(audio.length, offset + chunkSamples)));
+    const chunkInputs = await processor(chunk, {
+      is_first_audio_chunk: isFirstChunk,
+      is_streaming: true,
+    });
+
+    if (isFirstChunk) {
+      inputIds = chunkInputs.input_ids;
+    }
+    if (!chunkInputs.input_features) {
+      throw new Error("Voxtral Realtime processor did not return input_features.");
+    }
+
+    inputFeatures.push(chunkInputs.input_features);
+    offset += chunkSamples;
+    isFirstChunk = false;
+  }
+
+  if (!inputIds) {
+    throw new Error("Voxtral Realtime processor did not return input_ids for the first chunk.");
+  }
+
+  return {
+    input_features: inputFeatures,
+    input_ids: inputIds,
+  };
+}
+
 export { decodeWav, readWavFile, resampleAudio, type DecodedWav } from "./audio.browser.js";
 export {
   BrowserNativeAudioDecoder,
@@ -137,10 +210,10 @@ export class VoxtralTranscriber {
     const preparedAudio = resampleAudio(audio, sourceSampleRate, targetSampleRate);
 
     const startedAt = performance.now();
-    const inputs = await processor(preparedAudio);
+    const inputs = await createGenerationInputs(processor, preparedAudio);
     const outputs = await model.generate({
       ...inputs,
-      max_new_tokens: options.maxNewTokens,
+      max_new_tokens: resolveMaxNewTokens(processor, preparedAudio, options),
     });
     const text = processor.batch_decode(outputs, { skip_special_tokens: options.skipSpecialTokens ?? true })[0]?.trim() ?? "";
 

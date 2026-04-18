@@ -48,6 +48,10 @@ if [ -n "${VOXTRAL_CACHE_DIR:-}" ]; then
   VOXTRAL_ARGS+=(--cache-dir "$VOXTRAL_CACHE_DIR")
 fi
 
+if [ -n "${VOXTRAL_MAX_NEW_TOKENS:-}" ]; then
+  VOXTRAL_ARGS+=(--max-new-tokens "$VOXTRAL_MAX_NEW_TOKENS")
+fi
+
 npm run bench:voxtral -- "${VOXTRAL_ARGS[@]}"
 
 npm run bench:faster-whisper -- \

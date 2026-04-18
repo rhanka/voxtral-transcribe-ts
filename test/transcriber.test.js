@@ -6,6 +6,7 @@ function createFakeRuntime() {
   const calls = {
     disposed: 0,
     generate: 0,
+    lastGenerateInput: undefined,
     lastLoadOptions: undefined,
     load: 0,
     processedAudioLengths: [],
@@ -32,8 +33,9 @@ function createFakeRuntime() {
     async dispose() {
       calls.disposed += 1;
     },
-    async generate() {
+    async generate(input) {
       calls.generate += 1;
+      calls.lastGenerateInput = input;
       return { fake: true };
     },
   };
@@ -44,6 +46,57 @@ function createFakeRuntime() {
       async load(options) {
         calls.load += 1;
         calls.lastLoadOptions = options;
+        return { model, processor };
+      },
+    },
+  };
+}
+
+function createFakeVoxtralRealtimeRuntime() {
+  const calls = {
+    generate: 0,
+    lastGenerateInput: undefined,
+    processorOptions: [],
+    processedAudioLengths: [],
+  };
+
+  const processor = Object.assign(
+    async (audio, options = {}) => {
+      calls.processedAudioLengths.push(audio.length);
+      calls.processorOptions.push(options);
+      return {
+        input_features: { samples: audio.length },
+        input_ids: options.is_first_audio_chunk ? { bos: true } : undefined,
+      };
+    },
+    {
+      feature_extractor: {
+        config: {
+          sampling_rate: 16000,
+        },
+      },
+      num_samples_first_audio_chunk: 4,
+      num_samples_per_audio_chunk: 2,
+      raw_audio_length_per_tok: 2,
+      batch_decode() {
+        return ["bonjour realtime"];
+      },
+    },
+  );
+
+  const model = {
+    async dispose() {},
+    async generate(input) {
+      calls.generate += 1;
+      calls.lastGenerateInput = input;
+      return { fake: true };
+    },
+  };
+
+  return {
+    calls,
+    runtime: {
+      async load() {
         return { model, processor };
       },
     },
@@ -103,6 +156,27 @@ test("VoxtralTranscriber resamples raw audio before inference", async () => {
   });
 
   assert.equal(fake.calls.processedAudioLengths[0], 8);
+});
+
+test("VoxtralTranscriber chunks Voxtral Realtime audio before generation", async () => {
+  const fake = createFakeVoxtralRealtimeRuntime();
+  const transcriber = new VoxtralTranscriber({}, fake.runtime);
+
+  const result = await transcriber.transcribeAudio(new Float32Array([0, 1, 2, 3, 4, 5, 6]), {
+    sampleRate: 16000,
+  });
+
+  assert.equal(fake.calls.generate, 1);
+  assert.deepEqual(fake.calls.processedAudioLengths, [4, 2, 2]);
+  assert.deepEqual(fake.calls.processorOptions, [
+    { is_first_audio_chunk: true, is_streaming: true },
+    { is_first_audio_chunk: false, is_streaming: true },
+    { is_first_audio_chunk: false, is_streaming: true },
+  ]);
+  assert.equal(fake.calls.lastGenerateInput.input_ids.bos, true);
+  assert.equal(fake.calls.lastGenerateInput.input_features.length, 3);
+  assert.equal(fake.calls.lastGenerateInput.max_new_tokens, 68);
+  assert.equal(result.text, "bonjour realtime");
 });
 
 test("VoxtralTranscriber uses the configured audio decoder backend for file inputs", async () => {

@@ -18,8 +18,11 @@ export type ProcessorLike = {
       sampling_rate: number;
     };
   };
+  num_samples_first_audio_chunk?: number;
+  num_samples_per_audio_chunk?: number;
+  raw_audio_length_per_tok?: number;
   batch_decode(output: unknown, options?: { skip_special_tokens?: boolean }): string[];
-} & ((audio: Float32Array) => Promise<Record<string, unknown>>);
+} & ((audio: Float32Array, options?: Record<string, unknown>) => Promise<Record<string, unknown>>);
 
 export interface ModelLike {
   dispose(): Promise<unknown>;
@@ -35,7 +38,7 @@ export interface InferenceBackend {
 
 export class TransformersInferenceBackend implements InferenceBackend {
   async load(options: InferenceBackendLoadOptions): Promise<{ model: ModelLike; processor: ProcessorLike }> {
-    const { AutoProcessor, PreTrainedModel } = await import("@huggingface/transformers");
+    const { AutoProcessor, PreTrainedModel, VoxtralRealtimeForConditionalGeneration } = await import("@huggingface/transformers");
     const modelSource = options.modelPath ?? options.model;
     const localFilesOnly = options.requireLocalModel || options.localFilesOnly || Boolean(options.modelPath);
     const shared = {
@@ -46,7 +49,10 @@ export class TransformersInferenceBackend implements InferenceBackend {
     };
 
     const processor = (await AutoProcessor.from_pretrained(modelSource, shared)) as ProcessorLike;
-    const model = (await PreTrainedModel.from_pretrained(modelSource, {
+    const ModelClass = modelSource.toLowerCase().includes("voxtral")
+      ? VoxtralRealtimeForConditionalGeneration
+      : PreTrainedModel;
+    const model = (await ModelClass.from_pretrained(modelSource, {
       ...shared,
       device: options.device,
       dtype: options.dtype,
