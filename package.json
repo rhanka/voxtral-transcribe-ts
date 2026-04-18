@@ -35,6 +35,8 @@
     "build": "tsup src/index.node.ts src/index.browser.ts --format esm --dts --clean",
     "check:browser-bundle": "esbuild src/index.browser.ts --bundle --platform=browser --format=esm --outfile=/tmp/voxtral-browser-check.js",
     "check": "tsc --noEmit",
+    "bench:prepare-fleurs": "python3 bench/prepare-fleurs.py",
+    "bench:prepare-speed-audio": "node bench/prepare-speed-audio.mjs",
     "bench:manifest": "node bench/create-manifest.mjs",
     "bench:suite": "bash bench/run-suite.sh",
     "bench:voxtral": "node bench/run-voxtral.mjs",

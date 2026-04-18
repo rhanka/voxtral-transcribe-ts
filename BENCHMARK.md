@@ -8,6 +8,15 @@ This benchmark harness compares:
 
 The package itself remains Node/TypeScript-only. Python is only used by the optional `faster-whisper` comparison runner under `bench/`.
 
+## Protocol
+
+Use two complementary benchmarks:
+
+- `FLEURS fr_fr test` for recognition quality, scored with `WER` and `CER`
+- `SYSTRAN/faster-whisper benchmark.m4a` for speed, matching the upstream faster-whisper speed benchmark audio
+
+The speed audio is not used as the main WER benchmark because it is a single long file, not a statistically useful ASR corpus. FLEURS is not the main speed benchmark because it is many short clips and includes dataset iteration overhead.
+
 ## Dataset Manifest
 
 Create a JSONL manifest where each line describes one audio sample:
@@ -40,6 +49,55 @@ npm run bench:manifest -- \
 ```
 
 More dataset notes: `bench/datasets/README.md`.
+
+## Prepare FLEURS WER Dataset
+
+Install optional dataset tooling:
+
+```bash
+python3 -m venv .venv-bench
+. .venv-bench/bin/activate
+pip install datasets soundfile faster-whisper
+```
+
+Prepare French FLEURS test data:
+
+```bash
+npm run bench:prepare-fleurs -- \
+  --config fr_fr \
+  --split test \
+  --out bench/datasets/fleurs-fr-test.jsonl \
+  --audio-dir bench/datasets/audio/fleurs-fr-test
+```
+
+Run WER/CER benchmark:
+
+```bash
+MANIFEST=bench/datasets/fleurs-fr-test.jsonl npm run bench:suite
+```
+
+For a quick pipeline check, add `--limit 10` to `bench:prepare-fleurs`.
+
+## Prepare faster-whisper Speed Audio
+
+Download the same `benchmark.m4a` used by upstream `faster-whisper`:
+
+```bash
+npm run bench:prepare-speed-audio
+```
+
+This creates:
+
+- `bench/datasets/faster-whisper-speed/benchmark.m4a`
+- `bench/datasets/faster-whisper-speed.jsonl`
+
+Run speed benchmark:
+
+```bash
+MANIFEST=bench/datasets/faster-whisper-speed.jsonl npm run bench:suite
+```
+
+The manifest intentionally contains an empty reference transcript. Use its results for timing and RTF, not WER.
 
 ## Full Suite
 
@@ -127,9 +185,12 @@ The scorer prints a Markdown table and writes a JSON summary.
 - Keep model profiles explicit: for example `voxtral q4 cpu` vs `faster-whisper small int8 cpu`.
 - Do not compare a browser run against a server Python run unless that is the product question.
 - Treat model download/provisioning separately from transcription speed.
+- Report FLEURS quality and `benchmark.m4a` speed as separate tables.
 
 ## Current Status
 
 - Harness exists.
+- FLEURS prep exists for WER/CER.
+- Upstream faster-whisper speed audio prep exists for velocity.
 - No benchmark result is claimed yet.
-- The next step is to run it on a real French corpus and commit the generated summary separately if we want published numbers.
+- The next step is to run both manifests on the same machine and commit the generated summaries separately if we want published numbers.

@@ -43,6 +43,42 @@ This keeps the source audio as `mp3`. Use `FfmpegDecoder` for Voxtral:
 VOXTRAL_DECODER=ffmpeg MANIFEST=bench/datasets/common-voice-fr-test.jsonl npm run bench:suite
 ```
 
+## FLEURS
+
+FLEURS is the recommended first WER/CER benchmark for this repo.
+
+```bash
+python3 -m venv .venv-bench
+. .venv-bench/bin/activate
+pip install datasets soundfile faster-whisper
+
+npm run bench:prepare-fleurs -- \
+  --config fr_fr \
+  --split test \
+  --out bench/datasets/fleurs-fr-test.jsonl \
+  --audio-dir bench/datasets/audio/fleurs-fr-test
+```
+
+Use `--limit 10` for a quick local smoke before the full test split.
+
+## faster-whisper Speed Audio
+
+The upstream faster-whisper README speed benchmark uses a single 13-minute `benchmark.m4a` file.
+
+Prepare the same audio and a speed-only manifest:
+
+```bash
+npm run bench:prepare-speed-audio
+```
+
+Then run:
+
+```bash
+MANIFEST=bench/datasets/faster-whisper-speed.jsonl npm run bench:suite
+```
+
+The reference text is intentionally empty, so this manifest should be used for timing and RTF only.
+
 ## Internal Corpus
 
 For an internal CSV/TSV export, include at least:

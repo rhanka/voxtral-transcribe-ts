@@ -10,6 +10,7 @@ bench/datasets/audio/
 bench/datasets/raw/
 bench/datasets/*.jsonl
 !bench/datasets/manifest.example.jsonl
+bench/datasets/faster-whisper-speed/
 bench/results/*.json
 bench/results/*.jsonl
 !bench/results/.gitkeep
