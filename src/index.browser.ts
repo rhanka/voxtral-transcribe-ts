@@ -9,6 +9,14 @@ import {
   type AudioDecoderInput,
   type VoxtralTarget,
 } from "./decoder.browser.js";
+import {
+  DEFAULT_MISTRAL_API_BASE_URL,
+  DEFAULT_MISTRAL_TRANSCRIPTION_MODEL,
+  MistralVoxtralApiClient,
+  type MistralVoxtralApiClientOptions,
+  type MistralVoxtralApiTranscribeOptions,
+  type MistralVoxtralApiTranscriptionResult,
+} from "./mistral-api.js";
 import { TransformersInferenceBackend, type InferenceBackend, type ModelLike, type ProcessorLike } from "./runtime.js";
 
 export type VoxtralDevice = DeviceType;
@@ -64,6 +72,14 @@ interface NormalizedTranscriberOptions {
   progressCallback?: (progress: unknown) => void;
   requireLocalModel: boolean;
   revision?: string;
+}
+
+function isBlobLike(value: unknown): value is Blob {
+  return typeof Blob !== "undefined" && value instanceof Blob;
+}
+
+function blobFileName(input: Blob): string {
+  return typeof File !== "undefined" && input instanceof File ? input.name : "audio.wav";
 }
 
 function isVoxtralRealtimeProcessor(processor: ProcessorLike): processor is ProcessorLike & {
@@ -154,6 +170,15 @@ export {
   type VoxtralTarget,
 } from "./decoder.browser.js";
 export {
+  DEFAULT_MISTRAL_API_BASE_URL,
+  DEFAULT_MISTRAL_TRANSCRIPTION_MODEL,
+  MistralVoxtralApiClient,
+  type MistralTimestampGranularity,
+  type MistralVoxtralApiClientOptions,
+  type MistralVoxtralApiTranscribeOptions,
+  type MistralVoxtralApiTranscriptionResult,
+} from "./mistral-api.js";
+export {
   TransformersInferenceBackend,
   TransformersRuntime,
   type InferenceBackend,
@@ -165,6 +190,18 @@ export {
 
 export function createDefaultInferenceBackend(): InferenceBackend {
   return new TransformersInferenceBackend();
+}
+
+export class MistralVoxtralApiTranscriber extends MistralVoxtralApiClient {
+  async transcribeFile(
+    input: AudioDecoderInput,
+    options: MistralVoxtralApiTranscribeOptions = {},
+  ): Promise<MistralVoxtralApiTranscriptionResult> {
+    if (isBlobLike(input)) {
+      return await this.transcribeBlob(input, options, blobFileName(input));
+    }
+    return await this.transcribeUrl(input, options);
+  }
 }
 
 export class VoxtralTranscriber {
@@ -295,4 +332,12 @@ export async function transcribeFile(
   } finally {
     await transcriber.dispose();
   }
+}
+
+export async function transcribeFileWithMistral(
+  input: AudioDecoderInput,
+  options: MistralVoxtralApiClientOptions & MistralVoxtralApiTranscribeOptions = {},
+): Promise<MistralVoxtralApiTranscriptionResult> {
+  const transcriber = new MistralVoxtralApiTranscriber(options);
+  return await transcriber.transcribeFile(input, options);
 }

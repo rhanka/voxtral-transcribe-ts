@@ -11,6 +11,7 @@ It is intentionally small:
 - Node/TS only, no Python
 - thin wrapper around `@huggingface/transformers` + ONNX Runtime
 - 0 external audio decoder dependency
+- optional Mistral API transcription backend with no extra dependency
 
 The built-in file loader only supports `.wav` input so the package can stay lightweight. If you already have PCM samples in memory, use `transcribeAudio()`.
 
@@ -58,6 +59,7 @@ The package now ships conditional entries:
 | Node / local | `voxtral-transcribe-ts` or `voxtral-transcribe-ts/node` | `@huggingface/transformers` + `onnxruntime-node` | `InternalWavDecoder` | `wav` by default, multiformat via `FfmpegDecoder` |
 | Browser | `voxtral-transcribe-ts` in browser-aware bundlers or `voxtral-transcribe-ts/browser` | browser-safe package entry | `BrowserNativeAudioDecoder` | URL, `Blob`, `File`, browser codec support dependent on runtime |
 | Server high-perf | `voxtral-transcribe-ts/node` | `@huggingface/transformers` + `onnxruntime-node` | `FfmpegDecoder` recommended | multiformat through `ffmpeg` |
+| Mistral API | `voxtral-transcribe-ts/node` | HTTPS API call to Mistral | Mistral-hosted | local path upload or `file_url` |
 
 ## Decoder Matrix
 
@@ -161,6 +163,51 @@ console.log(result.text);
 Browser inputs can be passed as URLs or `Blob` / `File` objects when using `BrowserNativeAudioDecoder` or the default browser auto-selection.
 
 You can also create an instance through `createTranscriber(options)`, which uses the same defaults and target rules as `new VoxtralTranscriber(options)`.
+
+## Optional Mistral API Backend
+
+The package also exposes an optional hosted Voxtral transcription backend. This is not local/offline, but it is useful when latency matters more than self-hosting.
+
+It adds no npm dependency and uses the platform `fetch` / `FormData` APIs.
+
+```ts
+import { MistralVoxtralApiTranscriber } from "voxtral-transcribe-ts/node";
+
+const transcriber = new MistralVoxtralApiTranscriber({
+  // Optional in Node if process.env.MISTRAL_API_KEY is set.
+  apiKey: process.env.MISTRAL_API_KEY,
+});
+
+const result = await transcriber.transcribeFile("./sample.mp3", {
+  language: "fr",
+});
+
+console.log(result.text);
+```
+
+For remote audio, avoid downloading it yourself:
+
+```ts
+import { transcribeFileWithMistral } from "voxtral-transcribe-ts/node";
+
+const result = await transcribeFileWithMistral("https://example.com/audio.wav", {
+  apiKey: process.env.MISTRAL_API_KEY,
+  language: "fr",
+});
+```
+
+API options:
+
+- `model`: defaults to `voxtral-mini-latest`
+- `apiKey`: defaults to `process.env.MISTRAL_API_KEY` in the Node transcriber
+- `baseUrl`: defaults to `https://api.mistral.ai/v1`
+- `language`
+- `diarize`
+- `timestampGranularities`: `segment` or `word`
+- `contextBias`
+- `temperature`
+
+Browser builds also expose `MistralVoxtralApiTranscriber`, but do not put a long-lived Mistral API key in frontend code. Use a short-lived token or proxy if you need this path in a browser.
 
 ## Enterprise / Artifactory
 

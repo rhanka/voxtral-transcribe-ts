@@ -1,3 +1,6 @@
+import { readFile } from "node:fs/promises";
+import { basename, extname } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { DataType, DeviceType } from "@huggingface/transformers";
 import { resampleAudio, type DecodedWav } from "./audio.node.js";
 import {
@@ -9,6 +12,14 @@ import {
   type AudioDecoderInput,
   type VoxtralTarget,
 } from "./decoder.node.js";
+import {
+  DEFAULT_MISTRAL_API_BASE_URL,
+  DEFAULT_MISTRAL_TRANSCRIPTION_MODEL,
+  MistralVoxtralApiClient,
+  type MistralVoxtralApiClientOptions,
+  type MistralVoxtralApiTranscribeOptions,
+  type MistralVoxtralApiTranscriptionResult,
+} from "./mistral-api.js";
 import { TransformersInferenceBackend, type InferenceBackend, type ModelLike, type ProcessorLike } from "./runtime.js";
 
 export type VoxtralDevice = DeviceType;
@@ -64,6 +75,43 @@ interface NormalizedTranscriberOptions {
   progressCallback?: (progress: unknown) => void;
   requireLocalModel: boolean;
   revision?: string;
+}
+
+function isBlobLike(value: unknown): value is Blob {
+  return typeof Blob !== "undefined" && value instanceof Blob;
+}
+
+function remoteHttpUrl(input: string | URL): URL | undefined {
+  const value = input instanceof URL ? input : URL.canParse(input) ? new URL(input) : undefined;
+  return value && (value.protocol === "http:" || value.protocol === "https:") ? value : undefined;
+}
+
+function normalizeLocalFilePath(input: string | URL): string {
+  if (input instanceof URL && input.protocol === "file:") {
+    return fileURLToPath(input);
+  }
+  return input.toString();
+}
+
+function inferAudioMimeType(path: string): string {
+  switch (extname(path).toLowerCase()) {
+    case ".flac":
+      return "audio/flac";
+    case ".m4a":
+    case ".mp4":
+      return "audio/mp4";
+    case ".mp3":
+      return "audio/mpeg";
+    case ".oga":
+    case ".ogg":
+      return "audio/ogg";
+    case ".wav":
+      return "audio/wav";
+    case ".webm":
+      return "audio/webm";
+    default:
+      return "application/octet-stream";
+  }
 }
 
 function isVoxtralRealtimeProcessor(processor: ProcessorLike): processor is ProcessorLike & {
@@ -154,6 +202,15 @@ export {
   type VoxtralTarget,
 } from "./decoder.node.js";
 export {
+  DEFAULT_MISTRAL_API_BASE_URL,
+  DEFAULT_MISTRAL_TRANSCRIPTION_MODEL,
+  MistralVoxtralApiClient,
+  type MistralTimestampGranularity,
+  type MistralVoxtralApiClientOptions,
+  type MistralVoxtralApiTranscribeOptions,
+  type MistralVoxtralApiTranscriptionResult,
+} from "./mistral-api.js";
+export {
   TransformersInferenceBackend,
   TransformersRuntime,
   type InferenceBackend,
@@ -165,6 +222,34 @@ export {
 
 export function createDefaultInferenceBackend(): InferenceBackend {
   return new TransformersInferenceBackend();
+}
+
+export class MistralVoxtralApiTranscriber extends MistralVoxtralApiClient {
+  constructor(options: MistralVoxtralApiClientOptions = {}) {
+    super({
+      ...options,
+      apiKey: options.apiKey ?? process.env.MISTRAL_API_KEY,
+    });
+  }
+
+  async transcribeFile(
+    input: AudioDecoderInput,
+    options: MistralVoxtralApiTranscribeOptions = {},
+  ): Promise<MistralVoxtralApiTranscriptionResult> {
+    if (isBlobLike(input)) {
+      return await this.transcribeBlob(input, options, "audio.wav");
+    }
+
+    const url = remoteHttpUrl(input);
+    if (url) {
+      return await this.transcribeUrl(url, options);
+    }
+
+    const path = normalizeLocalFilePath(input);
+    const bytes = await readFile(path);
+    const blob = new Blob([bytes], { type: inferAudioMimeType(path) });
+    return await this.transcribeBlob(blob, options, basename(path));
+  }
 }
 
 export class VoxtralTranscriber {
@@ -295,4 +380,12 @@ export async function transcribeFile(
   } finally {
     await transcriber.dispose();
   }
+}
+
+export async function transcribeFileWithMistral(
+  path: AudioDecoderInput,
+  options: MistralVoxtralApiClientOptions & MistralVoxtralApiTranscribeOptions = {},
+): Promise<MistralVoxtralApiTranscriptionResult> {
+  const transcriber = new MistralVoxtralApiTranscriber(options);
+  return await transcriber.transcribeFile(path, options);
 }
