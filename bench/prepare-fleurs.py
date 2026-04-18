@@ -33,7 +33,12 @@ def main():
     except ImportError as error:
         raise SystemExit("Missing dependency: pip install datasets soundfile") from error
 
-    dataset = load_dataset("google/fleurs", args.config, split=args.split)
+    dataset = load_dataset(
+        "google/fleurs",
+        args.config,
+        split=args.split,
+        trust_remote_code=True,
+    )
     out_path = Path(args.out).resolve()
     audio_dir = Path(args.audio_dir).resolve()
     out_path.parent.mkdir(parents=True, exist_ok=True)

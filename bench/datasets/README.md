@@ -50,7 +50,7 @@ FLEURS is the recommended first WER/CER benchmark for this repo.
 ```bash
 python3 -m venv .venv-bench
 . .venv-bench/bin/activate
-pip install datasets soundfile faster-whisper
+pip install "datasets<4" soundfile faster-whisper
 
 npm run bench:prepare-fleurs -- \
   --config fr_fr \

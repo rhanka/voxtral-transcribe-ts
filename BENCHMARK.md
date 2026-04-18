@@ -57,7 +57,7 @@ Install optional dataset tooling:
 ```bash
 python3 -m venv .venv-bench
 . .venv-bench/bin/activate
-pip install datasets soundfile faster-whisper
+pip install "datasets<4" soundfile faster-whisper
 ```
 
 Prepare French FLEURS test data:
