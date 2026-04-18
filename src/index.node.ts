@@ -15,6 +15,7 @@ import {
 import {
   DEFAULT_MISTRAL_API_BASE_URL,
   DEFAULT_MISTRAL_TRANSCRIPTION_MODEL,
+  MISTRAL_REALTIME_TRANSCRIPTION_MODEL,
   MistralVoxtralApiClient,
   type MistralVoxtralApiClientOptions,
   type MistralVoxtralApiTranscribeOptions,
@@ -204,6 +205,7 @@ export {
 export {
   DEFAULT_MISTRAL_API_BASE_URL,
   DEFAULT_MISTRAL_TRANSCRIPTION_MODEL,
+  MISTRAL_REALTIME_TRANSCRIPTION_MODEL,
   MistralVoxtralApiClient,
   type MistralTimestampGranularity,
   type MistralVoxtralApiClientOptions,

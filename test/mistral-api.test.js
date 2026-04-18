@@ -52,7 +52,7 @@ test("MistralVoxtralApiClient posts file URLs as JSON", async () => {
     diarize: false,
     file_url: "https://example.com/audio.mp3",
     language: "fr",
-    model: "voxtral-mini-latest",
+    model: "voxtral-mini-2602",
   });
 });
 
@@ -66,7 +66,7 @@ test("MistralVoxtralApiTranscriber uploads local files as multipart form data", 
     fetcher: async (_url, init) => {
       const body = init.body;
       assert.equal(body instanceof FormData, true);
-      assert.equal(body.get("model"), "voxtral-mini-latest");
+      assert.equal(body.get("model"), "voxtral-mini-2602");
       assert.equal(body.get("language"), "fr");
       const file = body.get("file");
       assert.equal(file.name, "sample.wav");

@@ -1,5 +1,6 @@
 export const DEFAULT_MISTRAL_API_BASE_URL = "https://api.mistral.ai/v1";
-export const DEFAULT_MISTRAL_TRANSCRIPTION_MODEL = "voxtral-mini-latest";
+export const DEFAULT_MISTRAL_TRANSCRIPTION_MODEL = "voxtral-mini-2602";
+export const MISTRAL_REALTIME_TRANSCRIPTION_MODEL = "voxtral-mini-transcribe-realtime-2602";
 
 export type MistralTimestampGranularity = "segment" | "word";
 

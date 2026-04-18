@@ -198,7 +198,7 @@ const result = await transcribeFileWithMistral("https://example.com/audio.wav", 
 
 API options:
 
-- `model`: defaults to `voxtral-mini-latest`
+- `model`: defaults to `voxtral-mini-2602`
 - `apiKey`: defaults to `process.env.MISTRAL_API_KEY` in the Node transcriber
 - `baseUrl`: defaults to `https://api.mistral.ai/v1`
 - `language`
