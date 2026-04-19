@@ -58,10 +58,15 @@ echo "Step 6: Verify published exports..."
 cd "$INSTALL_DIR"
 node --input-type=module <<'EOF'
 const expected = [
+  "DEFAULT_MISTRAL_TRANSCRIPTION_MODEL",
+  "MISTRAL_REALTIME_TRANSCRIPTION_MODEL",
+  "MistralVoxtralApiClient",
+  "MistralVoxtralApiTranscriber",
   "VoxtralTranscriber",
   "createTranscriber",
   "transcribeAudio",
   "transcribeFile",
+  "transcribeFileWithMistral",
   "createDefaultAudioDecoderBackend",
   "createDefaultInferenceBackend",
 ];

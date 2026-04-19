@@ -1,6 +1,6 @@
 {
   "name": "voxtral-transcribe-ts",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Minimal TypeScript wrapper for local Voxtral Mini 4B Realtime transcription in Node.js.",
   "type": "module",
   "main": "./dist/index.node.js",
@@ -43,6 +43,7 @@
     "bench:faster-whisper": "python3 bench/run-faster-whisper.py",
     "bench:score": "node bench/score.mjs",
     "test:smoke": "bash ./scripts/smoke-test.sh",
+    "test:mistral-api": "node ./scripts/mistral-api-smoke-test.mjs",
     "test": "npm run build && node --test test/*.test.js",
     "validate": "npm run check && npm run test && npm run check:browser-bundle",
     "prepublishOnly": "npm run validate && npm run test:smoke"
